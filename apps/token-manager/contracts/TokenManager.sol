@@ -14,6 +14,9 @@ import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import "@aragon/apps-shared-minime/contracts/ITokenController.sol";
 import "@aragon/apps-shared-minime/contracts/MiniMeToken.sol";
 
+interface ITransferOracle {
+    getTransferability(address _from, address _to, uint256 _amount) external;
+}
 
 contract TokenManager is ITokenController, IForwarder, AragonApp {
     using SafeMath for uint256;
@@ -23,6 +26,7 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
     bytes32 public constant ASSIGN_ROLE = keccak256("ASSIGN_ROLE");
     bytes32 public constant REVOKE_VESTINGS_ROLE = keccak256("REVOKE_VESTINGS_ROLE");
     bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
+    bytes32 public constant SET_ORACLE = keccak256("SET_ORACLE");
 
     uint256 public constant MAX_VESTINGS_PER_ADDRESS = 50;
 
@@ -49,6 +53,7 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
 
     // Note that we COMPLETELY trust this MiniMeToken to not be malicious for proper operation of this contract
     MiniMeToken public token;
+    ITransferOracle public oracle;
     uint256 public maxAccountTokens;
 
     // We are mimicing an array in the inner mapping, we use a mapping instead to make app upgrade more graceful
@@ -94,6 +99,10 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
         if (token.transfersEnabled() != _transferable) {
             token.enableTransfers(_transferable);
         }
+    }
+
+    function setOracle(address _oracle) external auth(SET_ORACLE) {
+        oracle = _oracle;
     }
 
     /**
@@ -221,7 +230,9 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
     * @return False if the controller does not authorize the transfer
     */
     function onTransfer(address _from, address _to, uint256 _amount) external onlyToken returns (bool) {
-        return _isBalanceIncreaseAllowed(_to, _amount) && _transferableBalance(_from, getTimestamp()) >= _amount;
+        bool transferability = getTransferability(_from, _to, _amount);
+        bool balanceIncreaseAllowed = _isBalanceIncreaseAllowed(_to, _amount) && _transferableBalance(_from, getTimestamp()) >= _amount;
+        return transferability && balanceIncreaseAllowed;
     }
 
     /**

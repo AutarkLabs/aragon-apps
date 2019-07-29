@@ -7,6 +7,7 @@ const { encodeCallScript } = require('@aragon/test-helpers/evmScript')
 const ExecutionTarget = artifacts.require('ExecutionTarget')
 
 const TokenManager = artifacts.require('TokenManagerMock')
+const WhitelistOracle = artifacts.require('WhitelistOracle')
 const MiniMeToken = artifacts.require('MiniMeToken')
 const ACL = artifacts.require('ACL')
 const Kernel = artifacts.require('Kernel')
@@ -55,6 +56,7 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
         const regFact = await EVMScriptRegistryFactory.new()
         daoFact = await DAOFactory.new(kernelBase.address, aclBase.address, regFact.address)
         tokenManagerBase = await TokenManager.new()
+        whitelistOracleBase = await WhitelistOracle.new()
 
         // Setup constants
         APP_MANAGER_ROLE = await kernelBase.APP_MANAGER_ROLE()
@@ -63,6 +65,9 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
         ASSIGN_ROLE = await tokenManagerBase.ASSIGN_ROLE()
         REVOKE_VESTINGS_ROLE = await tokenManagerBase.REVOKE_VESTINGS_ROLE()
         BURN_ROLE = await tokenManagerBase.BURN_ROLE()
+        // Setup Oracle Constants
+        ADD_SENDER_ROLE = await tokenManagerBase.ADD_SENDER_ROLE()
+        REMOVE_SENDER_ROLE = await tokenManagerBase.REMOVE_SENDER_ROLE()
 
         const ethConstant = await EtherTokenConstantMock.new()
         ETH = await ethConstant.getETHConstant()
@@ -78,12 +83,17 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
         const receipt = await dao.newAppInstance('0x1234', tokenManagerBase.address, '0x', false, { from: root })
         tokenManager = TokenManager.at(getNewProxyAddress(receipt))
         tokenManager.mockSetTimestamp(NOW)
+        const receiptOracle = await dao.newAppInstance('0x3456', whitelistOracleBase.address, '0x', false, { from: root })
+        oracle = WhitelistOracle.at(getNewProxyAddress(receiptOracle))
 
         await acl.createPermission(ANY_ADDR, tokenManager.address, MINT_ROLE, root, { from: root })
         await acl.createPermission(ANY_ADDR, tokenManager.address, ISSUE_ROLE, root, { from: root })
         await acl.createPermission(ANY_ADDR, tokenManager.address, ASSIGN_ROLE, root, { from: root })
         await acl.createPermission(ANY_ADDR, tokenManager.address, REVOKE_VESTINGS_ROLE, root, { from: root })
         await acl.createPermission(ANY_ADDR, tokenManager.address, BURN_ROLE, root, { from: root })
+        await acl.createPermission(ANY_ADDR, tokenManager.address, SET_ORACLE, root, { from: root })
+        await acl.createPermission(ANY_ADDR, oracle.address, ADD_SENDER_ROLE, root, { from: root })
+        await acl.createPermission(ANY_ADDR, oracle.address, REMOVE_SENDER_ROLE, root, { from: root })
 
         token = await MiniMeToken.new(n, n, 0, 'n', 0, 'n', true)
     })
@@ -298,6 +308,31 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
 
                 // Make sure no ETH was transferred
                 assert.equal((await getBalance(tokenManager.address)).toNumber(), prevTokenManagerBalance, 'token manager ETH balance should be the same')
+            })
+
+            it('can set a transfer Oracle', async () => {
+                oracle.initialize([root])
+                tokenManager.setOracle(oracle)
+                assert.equal(await tokenManager.oracle(), root)
+            })
+
+            it('can transfer with oracle', async () => {
+                const amount = 10
+                oracle.initialize([root])
+                tokenManager.setOracle(oracle)
+                assert.equal(await tokenManager.oracle(), root)
+                await tokenManager.mint(root, amount)
+                await token.transfer(holder, 10, { from: root })
+            })
+
+            it('reverts on invalid transfer', async () => {
+                const amount = 10
+                oracle.initialize([root])
+                tokenManager.setOracle(oracle)
+                assert.equal(await tokenManager.oracle(), root)
+                await tokenManager.mint(holder, amount)
+                await assertRevert(token.transfer(root, 10, { from: holder }))
+                
             })
 
             it('fails when assigning invalid vesting schedule', async () => {
