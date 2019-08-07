@@ -65,9 +65,11 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
         ASSIGN_ROLE = await tokenManagerBase.ASSIGN_ROLE()
         REVOKE_VESTINGS_ROLE = await tokenManagerBase.REVOKE_VESTINGS_ROLE()
         BURN_ROLE = await tokenManagerBase.BURN_ROLE()
+        SET_ORACLE = await tokenManagerBase.SET_ORACLE()
+
         // Setup Oracle Constants
-        ADD_SENDER_ROLE = await tokenManagerBase.ADD_SENDER_ROLE()
-        REMOVE_SENDER_ROLE = await tokenManagerBase.REMOVE_SENDER_ROLE()
+        ADD_SENDER_ROLE = await whitelistOracleBase.ADD_SENDER_ROLE()
+        REMOVE_SENDER_ROLE = await whitelistOracleBase.REMOVE_SENDER_ROLE()
 
         const ethConstant = await EtherTokenConstantMock.new()
         ETH = await ethConstant.getETHConstant()
@@ -310,30 +312,6 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
                 assert.equal((await getBalance(tokenManager.address)).toNumber(), prevTokenManagerBalance, 'token manager ETH balance should be the same')
             })
 
-            it('can set a transfer Oracle', async () => {
-                oracle.initialize([root])
-                tokenManager.setOracle(oracle)
-                assert.equal(await tokenManager.oracle(), root)
-            })
-
-            it('can transfer with oracle', async () => {
-                const amount = 10
-                oracle.initialize([root])
-                tokenManager.setOracle(oracle)
-                assert.equal(await tokenManager.oracle(), root)
-                await tokenManager.mint(root, amount)
-                await token.transfer(holder, 10, { from: root })
-            })
-
-            it('reverts on invalid transfer', async () => {
-                const amount = 10
-                oracle.initialize([root])
-                tokenManager.setOracle(oracle)
-                assert.equal(await tokenManager.oracle(), root)
-                await tokenManager.mint(holder, amount)
-                await assertRevert(token.transfer(root, 10, { from: holder }))
-                
-            })
 
             it('fails when assigning invalid vesting schedule', async () => {
                 const tokens = 10
@@ -373,6 +351,7 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
                     beforeEach(async () => {
                         await tokenManager.issue(totalTokens)
                         await tokenManager.assignVested(holder, totalTokens, startDate, cliffDate, vestingDate, revokable)
+                        await oracle.initialize([root])                        
                     })
 
                     it('fails trying to get vesting out of bounds', async () => {
@@ -466,6 +445,28 @@ contract('Token Manager', ([root, holder, holder2, anyone]) => {
 
                         // But can now transfer
                         await token.transfer(holder2, 1, { from: holder })
+                    })
+
+                    it('can set a transfer Oracle', async () => {
+                        await tokenManager.setOracle(oracle.address)
+                        assert.equal(await tokenManager.oracle(), oracle.address)
+                    })
+        
+                    it('can transfer with oracle', async () => {
+                        await tokenManager.mockIncreaseTime(VESTING_DURATION)
+                        const amount = 10
+                        await tokenManager.setOracle(oracle.address)
+                        await tokenManager.mint(root, amount)
+                        await token.transfer(holder, 10, { from: root })
+                    })
+        
+                    it('reverts on invalid transfer', async () => {
+                        await tokenManager.mockIncreaseTime(VESTING_DURATION)
+                        const amount = 10
+                        await tokenManager.setOracle(oracle.address)
+                        await tokenManager.mint(holder, amount)
+                        await assertRevert(token.transfer(root, 10, { from: holder }))
+                        
                     })
                 })
             }

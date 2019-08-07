@@ -15,7 +15,7 @@ import "@aragon/apps-shared-minime/contracts/ITokenController.sol";
 import "@aragon/apps-shared-minime/contracts/MiniMeToken.sol";
 
 interface ITransferOracle {
-    getTransferability(address _from, address _to, uint256 _amount) external;
+    function getTransferability(address _from, address _to, uint256 _amount) external returns(bool);
 }
 
 contract TokenManager is ITokenController, IForwarder, AragonApp {
@@ -102,7 +102,7 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
     }
 
     function setOracle(address _oracle) external auth(SET_ORACLE) {
-        oracle = _oracle;
+        oracle = ITransferOracle(_oracle);
     }
 
     /**
@@ -230,7 +230,10 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
     * @return False if the controller does not authorize the transfer
     */
     function onTransfer(address _from, address _to, uint256 _amount) external onlyToken returns (bool) {
-        bool transferability = getTransferability(_from, _to, _amount);
+        bool transferability = true;
+        if(_from != address(this) && address(oracle) != address(0x0)){
+            transferability = oracle.getTransferability(_from, _to, _amount);
+        }
         bool balanceIncreaseAllowed = _isBalanceIncreaseAllowed(_to, _amount) && _transferableBalance(_from, getTimestamp()) >= _amount;
         return transferability && balanceIncreaseAllowed;
     }

@@ -9,7 +9,7 @@ pragma solidity 0.4.24;
 import "@aragon/os/contracts/apps/AragonApp.sol";
 
 interface ITransferOracle {
-    getTransferability(address _from, address _to, uint256 _amount) external;
+    function getTransferability(address _from, address _to, uint256 _amount) external returns (bool);
 }
 
 contract WhitelistOracle is AragonApp, ITransferOracle {
@@ -19,22 +19,22 @@ contract WhitelistOracle is AragonApp, ITransferOracle {
 
     mapping(address => bool) validSender;
 
-    initalize(address[] _senders) external onlyInit {
+    function initialize(address[] _senders) external onlyInit {
         initialized();
         for(uint256 i = 0; i < _senders.length; i++){
             validSender[_senders[i]] = true;
         }
     }
 
-    addSender(address _sender) external auth(ADD_SENDER_ROLE){
+    function addSender(address _sender) external auth(ADD_SENDER_ROLE){
         validSender[_sender] = true;
     }
 
-    removeSender(address _sender) external auth(REMOVE_SENDER_ROLE) {
+    function removeSender(address _sender) external auth(REMOVE_SENDER_ROLE) {
         validSender[_sender] = false;
     }
 
-    getTransferability(address _from, address _to, uint256 _amount) external {
+    function getTransferability(address _from, address _to, uint256 _amount) external returns (bool) {
         return validSender[_from];
     }
 
