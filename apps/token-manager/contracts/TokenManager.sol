@@ -200,7 +200,7 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
         authP(REVOKE_VESTINGS_ROLE, arr(_holder))
         vestingExists(_holder, _vestingId)
     {
-        TokenVesting storage v = vestings[_holder][_vestingId];
+        TokenVesting memory v = vestings[_holder][_vestingId];
         require(v.revokable, ERROR_VESTING_NOT_REVOKABLE);
 
         uint256 nonVested = _calculateNonVestedTokens(
@@ -307,7 +307,7 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
             bool revokable
         )
     {
-        TokenVesting storage tokenVesting = vestings[_recipient][_vestingId];
+        TokenVesting memory tokenVesting = vestings[_recipient][_vestingId];
         amount = tokenVesting.amount;
         start = tokenVesting.start;
         cliff = tokenVesting.cliff;
@@ -420,7 +420,7 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
         if (_holder != address(this)) {
             uint256 vestingsCount = vestingsLengths[_holder];
             for (uint256 i = 0; i < vestingsCount; i++) {
-                TokenVesting storage v = vestings[_holder][i];
+                TokenVesting memory v = vestings[_holder][i];
                 uint256 nonTransferable = _calculateNonVestedTokens(
                     v.amount,
                     _time,
