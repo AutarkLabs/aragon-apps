@@ -175,13 +175,13 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
         require(_start <= _cliff && _cliff <= _vested, ERROR_WRONG_CLIFF_DATE);
 
         uint256 vestingId = vestingsLengths[_receiver]++;
-        vestings[_receiver][vestingId] = TokenVesting(
-            _amount,
-            _start,
-            _cliff,
-            _vested,
-            _revokable
-        );
+        vestings[_receiver][vestingId] = TokenVesting({
+            amount: _amount,
+            start: _start,
+            cliff: _cliff,
+            vesting: _vested,
+            revokable: _revokable
+        });
 
         _assign(_receiver, _amount);
 
