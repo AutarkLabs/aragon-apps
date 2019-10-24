@@ -14,9 +14,14 @@ interface ITransferOracle {
 
 contract WhitelistOracle is AragonApp, ITransferOracle {
 
+    /*
     bytes32 public constant ADD_SENDER_ROLE = keccak256("ADD_SENDER_ROLE");
     bytes32 public constant REMOVE_SENDER_ROLE = keccak256("REMOVE_SENDER_ROLE");
-
+    */
+    
+    bytes32 public constant ADD_SENDER_ROLE = 0x649896fce4266201ed0200f1f18d2316c4c0be48c949b18cccd5ef15621249e3;
+    bytes32 public constant REMOVE_SENDER_ROLE = 0x9d7a040f5c6540f643d8a175f70736671ffabd35f3de2e4176cfcbbe9cd71acb;
+    
     mapping(address => bool) validSender;
 
     function initialize(address[] _senders) external onlyInit {

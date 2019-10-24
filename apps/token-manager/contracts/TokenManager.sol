@@ -20,14 +20,21 @@ interface ITransferOracle {
 
 contract TokenManager is ITokenController, IForwarder, AragonApp {
     using SafeMath for uint256;
-
+    /*
     bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
     bytes32 public constant ISSUE_ROLE = keccak256("ISSUE_ROLE");
     bytes32 public constant ASSIGN_ROLE = keccak256("ASSIGN_ROLE");
     bytes32 public constant REVOKE_VESTINGS_ROLE = keccak256("REVOKE_VESTINGS_ROLE");
     bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
     bytes32 public constant SET_ORACLE = keccak256("SET_ORACLE");
-
+    */
+    bytes32 public constant MINT_ROLE = 0x154c00819833dac601ee5ddded6fda79d9d8b506b911b3dbd54cdb95fe6c3686;
+    bytes32 public constant ISSUE_ROLE = 0x2406f1e99f79cea012fb88c5c36566feaeefee0f4b98d3a376b49310222b53c4;
+    bytes32 public constant ASSIGN_ROLE = 0xf5a08927c847d7a29dc35e105208dbde5ce951392105d712761cc5d17440e2ff;
+    bytes32 public constant REVOKE_VESTINGS_ROLE = 0x95ffc68daedf1eb334cfcd22ee24a5eeb5a8e58aa40679f2ad247a84140f8d6e;
+    bytes32 public constant BURN_ROLE = 0xe97b137254058bd94f28d2f3eb79e2d34074ffb488d042e3bc958e0a57d2fa22;
+    bytes32 public constant SET_ORACLE = 0x11eba3f259e2be865238d718fd308257e3874ad4b3a642ea3af386a4eea190bd;
+    
     uint256 public constant MAX_VESTINGS_PER_ADDRESS = 50;
 
     string private constant ERROR_CALLER_NOT_TOKEN = "TM_CALLER_NOT_TOKEN";
