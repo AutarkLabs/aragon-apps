@@ -48,7 +48,7 @@ contract WhitelistOracle is AragonApp, ITransferOracle {
         emit ValidSenderRemoved(_sender);
     }
 
-    function getTransferability(address _from, address _to, uint256 _amount) external returns (bool) {
+    function getTransferability(address _from, address /*_to*/, uint256 /*_amount*/) external returns (bool) {
         return validSender[_from];
     }
 
