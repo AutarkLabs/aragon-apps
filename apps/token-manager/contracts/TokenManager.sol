@@ -70,8 +70,8 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
     }
 
     modifier vestingExists(address _holder, uint256 _vestingId) {
-        // TODO: it's not checking for gaps that may appear because of deletes in revokeVesting function
         require(_vestingId < vestingsLengths[_holder], ERROR_NO_VESTING);
+        require(vestings[_holder][_vestingId].amount != 0, ERROR_NO_VESTING);
         _;
     }
 
